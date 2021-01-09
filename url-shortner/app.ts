@@ -90,7 +90,7 @@ app.post('/shorten-url', authenticate, async (req: Request, res: Response) => {
                         });
                     } else {
                         let urlShortener: UniqueShortIdGeneratorService = new UniqueShortIdGeneratorService();
-                        let shortUrl: string = urlShortener.generateUniqueId();
+                        let shortUrl: string = urlShortener.generateUniqueId({ length: 9 });
                         let urlData = {
                             url,
                             shortUrl,
@@ -131,8 +131,6 @@ app.get('/redirect-url/:shortUrl', async (req: Request, res: Response) => {
 
         //check url exists
         let db = connection.db(dbName);
-        console.log('userid', req.body.userid);
-        console.log('shortUrl', req.params.shortUrl);
         let urlData = await db.collection('url').findOne({
             shortUrl: req.params.shortUrl
         });
@@ -169,9 +167,7 @@ app.get('/url-data', authenticate, async (req: Request, res: Response) => {
 
         // fetch all the url details
         let db = connection.db(dbName);
-        console.log(req.body);
         let urlData = await db.collection('url').find({ userid: req.body.userid }).toArray();
-        console.log(urlData);
         res.json({
             message: 'Url details fetched successfully',
             data: urlData
@@ -194,7 +190,6 @@ app.post('/login', async (req, res) => {
         if (user) {
             let isUserAuthenticated = await bycrypt.compare(req.body.password, user.password);
             if (isUserAuthenticated) {
-                console.log(process.env);
                 let token = jwt.sign({ userid: user._id, email: user.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
                 res.json({
                     message: 'User Authenticated Successfully',
@@ -238,9 +233,6 @@ app.post('/sign-up', async (req, res) => {
             })
         } else {
             let data = await db.collection('users').insertOne({ email: req.body.email, password: req.body.password });
-            console.log('data', data);
-            console.log('data-ops', data.ops);
-            console.log('data-insertedCount:', data.insertedCount);
             let token = jwt.sign({ userid: data.ops[0]._id, email: req.body.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
             res.json({
                 message: 'User Registered Successfully',
@@ -269,11 +261,7 @@ app.post('/forget-password', async (req, res) => {
         let user = await db.collection('users').findOne({ email: req.body.email });
 
         if (user) {
-            // let token = await crypto.randomBytes(20);
-            let urlShortener: UniqueShortIdGeneratorService = new UniqueShortIdGeneratorService();
-            let token = urlShortener.generateUniqueId({ length: 9 });
-            console.log(ObjectId(user._id));
-            console.log('forgot', token);
+            let token = await crypto.randomBytes(32).toString('hex');
             await db.collection('users').updateOne({ _id: ObjectId(user._id) }, { $set: { resetToken: token, resetTokenExpires: Date.now() + 300000 } });
 
             let mailBody = `<div>
@@ -300,10 +288,6 @@ app.post('/forget-password', async (req, res) => {
                 html: mailBody,
             });
 
-            console.log("Message sent: %s", info.messageId);
-
-            // Preview only available when sending through an Ethereal account
-            console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
             res.json({
                 message: `Mail has been sent to ${user.email}</h4> with further instructions`,
             })
