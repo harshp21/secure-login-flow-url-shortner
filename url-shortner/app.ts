@@ -20,7 +20,7 @@ const dbName: string = 'short_url';
 //env
 dotenv.config();
 
-let origin = 'http://127.0.0.1:5500';
+let origin = 'https://tender-lamarr-138d1c.netlify.app';
 
 //middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -370,4 +370,4 @@ app.get('/ping', authenticate, async (req, res) => {
 })
 
 //listen on port
-app.listen(3000);
+app.listen(process.env.PORT || 3000);
