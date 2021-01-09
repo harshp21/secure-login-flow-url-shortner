@@ -57,7 +57,7 @@ var url = 'mongodb+srv://harsh:harsh123@cluster0.vjrm0.mongodb.net/<dbname>?retr
 var dbName = 'short_url';
 //env
 dotenv_1.default.config();
-var origin = 'http://127.0.0.1:5500';
+var origin = 'https://tender-lamarr-138d1c.netlify.app';
 //middleware
 app.use(body_parser_1.default.urlencoded({ extended: true }));
 app.use(body_parser_1.default.json());
@@ -518,4 +518,4 @@ app.get('/ping', authenticate, function (req, res) { return __awaiter(void 0, vo
     });
 }); });
 //listen on port
-app.listen(3000);
+app.listen(process.env.PORT || 3000);
