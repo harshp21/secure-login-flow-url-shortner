@@ -48,6 +48,7 @@ var cors_1 = __importDefault(require("cors"));
 var dns_1 = __importDefault(require("dns"));
 var bcrypt_1 = __importDefault(require("bcrypt"));
 var nodemailer_1 = __importDefault(require("nodemailer"));
+var crypto_1 = __importDefault(require("crypto"));
 var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 var dotenv_1 = __importDefault(require("dotenv"));
 // mongo db config
@@ -133,7 +134,7 @@ app.post('/shorten-url', authenticate, function (req, res) { return __awaiter(vo
                                         return [3 /*break*/, 5];
                                     case 3:
                                         urlShortener = new UniqueShortIdGenerator_service_1.UniqueShortIdGeneratorService();
-                                        shortUrl = urlShortener.generateUniqueId();
+                                        shortUrl = urlShortener.generateUniqueId({ length: 9 });
                                         urlData_1 = {
                                             url: url_2,
                                             shortUrl: shortUrl,
@@ -186,8 +187,6 @@ app.get('/redirect-url/:shortUrl', function (req, res) { return __awaiter(void 0
             case 2:
                 _a.trys.push([2, 7, 8, 9]);
                 db = connection.db(dbName);
-                console.log('userid', req.body.userid);
-                console.log('shortUrl', req.params.shortUrl);
                 return [4 /*yield*/, db.collection('url').findOne({
                         shortUrl: req.params.shortUrl
                     })];
@@ -237,11 +236,9 @@ app.get('/url-data', authenticate, function (req, res) { return __awaiter(void 0
             case 2:
                 _a.trys.push([2, 4, 5, 6]);
                 db = connection.db(dbName);
-                console.log(req.body);
                 return [4 /*yield*/, db.collection('url').find({ userid: req.body.userid }).toArray()];
             case 3:
                 urlData = _a.sent();
-                console.log(urlData);
                 res.json({
                     message: 'Url details fetched successfully',
                     data: urlData
@@ -280,7 +277,6 @@ app.post('/login', function (req, res) { return __awaiter(void 0, void 0, void 0
             case 4:
                 isUserAuthenticated = _a.sent();
                 if (isUserAuthenticated) {
-                    console.log(process.env);
                     token = jsonwebtoken_1.default.sign({ userid: user._id, email: user.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
                     res.json({
                         message: 'User Authenticated Successfully',
@@ -346,9 +342,6 @@ app.post('/sign-up', function (req, res) { return __awaiter(void 0, void 0, void
             case 6: return [4 /*yield*/, db.collection('users').insertOne({ email: req.body.email, password: req.body.password })];
             case 7:
                 data = _a.sent();
-                console.log('data', data);
-                console.log('data-ops', data.ops);
-                console.log('data-insertedCount:', data.insertedCount);
                 token = jsonwebtoken_1.default.sign({ userid: data.ops[0]._id, email: req.body.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
                 res.json({
                     message: 'User Registered Successfully',
@@ -374,7 +367,7 @@ app.post('/sign-up', function (req, res) { return __awaiter(void 0, void 0, void
     });
 }); });
 app.post('/forget-password', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, user, urlShortener, token, mailBody, transporter, info, err_5;
+    var connection, db, user, token, mailBody, transporter, info, err_5;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
@@ -382,18 +375,17 @@ app.post('/forget-password', function (req, res) { return __awaiter(void 0, void
                 connection = _a.sent();
                 _a.label = 2;
             case 2:
-                _a.trys.push([2, 8, 9, 10]);
+                _a.trys.push([2, 9, 10, 11]);
                 db = connection.db(dbName);
                 return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
             case 3:
                 user = _a.sent();
-                if (!user) return [3 /*break*/, 6];
-                urlShortener = new UniqueShortIdGenerator_service_1.UniqueShortIdGeneratorService();
-                token = urlShortener.generateUniqueId({ length: 9 });
-                console.log(mongodb_1.ObjectId(user._id));
-                console.log('forgot', token);
-                return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user._id) }, { $set: { resetToken: token, resetTokenExpires: Date.now() + 300000 } })];
+                if (!user) return [3 /*break*/, 7];
+                return [4 /*yield*/, crypto_1.default.randomBytes(32).toString('hex')];
             case 4:
+                token = _a.sent();
+                return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user._id) }, { $set: { resetToken: token, resetTokenExpires: Date.now() + 300000 } })];
+            case 5:
                 _a.sent();
                 mailBody = "<div>\n                <h3>Reset Password</h3>\n                <p>Please click the given link to reset your password <a target=\"_blank\" href=\"" + origin + "/reset-password.html?key=" + encodeURIComponent(token) + "\"> click here </a></p>\n            </div>";
                 transporter = nodemailer_1.default.createTransport({
@@ -411,29 +403,26 @@ app.post('/forget-password', function (req, res) { return __awaiter(void 0, void
                         subject: "Reset password",
                         html: mailBody,
                     })];
-            case 5:
-                info = _a.sent();
-                console.log("Message sent: %s", info.messageId);
-                // Preview only available when sending through an Ethereal account
-                console.log("Preview URL: %s", nodemailer_1.default.getTestMessageUrl(info));
-                res.json({
-                    message: "Mail has been sent to " + user.email + " with further instructions",
-                });
-                return [3 /*break*/, 7];
             case 6:
+                info = _a.sent();
+                res.json({
+                    message: "Mail has been sent to " + user.email + "</h4> with further instructions",
+                });
+                return [3 /*break*/, 8];
+            case 7:
                 res.status(400).json({
                     message: 'User not found',
                 });
-                _a.label = 7;
-            case 7: return [3 /*break*/, 10];
-            case 8:
+                _a.label = 8;
+            case 8: return [3 /*break*/, 11];
+            case 9:
                 err_5 = _a.sent();
                 console.log(err_5);
-                return [3 /*break*/, 10];
-            case 9:
+                return [3 /*break*/, 11];
+            case 10:
                 connection.close();
                 return [7 /*endfinally*/];
-            case 10: return [2 /*return*/];
+            case 11: return [2 /*return*/];
         }
     });
 }); });
