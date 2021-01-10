@@ -57,7 +57,7 @@ var url = 'mongodb+srv://harsh:harsh123@cluster0.vjrm0.mongodb.net/<dbname>?retr
 var dbName = 'short_url';
 //env
 dotenv_1.default.config();
-var origin = 'https://tender-lamarr-138d1c.netlify.app';
+var origin = 'https://relaxed-jepsen-29166d.netlify.app';
 //middleware
 app.use(body_parser_1.default.urlencoded({ extended: true }));
 app.use(body_parser_1.default.json());
