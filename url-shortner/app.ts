@@ -20,7 +20,7 @@ const dbName: string = 'short_url';
 //env
 dotenv.config();
 
-let origin = 'https://tender-lamarr-138d1c.netlify.app';
+let origin = 'https://relaxed-jepsen-29166d.netlify.app';
 
 //middleware
 app.use(bodyParser.urlencoded({ extended: true }));
