@@ -51,13 +51,14 @@ var nodemailer_1 = __importDefault(require("nodemailer"));
 var crypto_1 = __importDefault(require("crypto"));
 var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 var dotenv_1 = __importDefault(require("dotenv"));
+var validator_1 = __importDefault(require("validator"));
 // mongo db config
 var app = express_1.default();
 var url = 'mongodb+srv://harsh:harsh123@cluster0.vjrm0.mongodb.net/<dbname>?retryWrites=true&w=majority';
 var dbName = 'short_url';
 //env
 dotenv_1.default.config();
-var origin = 'https://relaxed-jepsen-29166d.netlify.app';
+var origin = 'http://127.0.0.1:5500';
 //middleware
 app.use(body_parser_1.default.urlencoded({ extended: true }));
 app.use(body_parser_1.default.json());
@@ -65,7 +66,6 @@ app.use(cors_1.default({
     origin: origin
 }));
 function authenticate(req, res, next) {
-    // console.log(req.headers)
     if (req.headers.authorization) {
         jsonwebtoken_1.default.verify(req.headers.authorization, process.env.JWT_TOKEN, function (err, data) {
             if (data) {
@@ -134,12 +134,13 @@ app.post('/shorten-url', authenticate, function (req, res) { return __awaiter(vo
                                         return [3 /*break*/, 5];
                                     case 3:
                                         urlShortener = new UniqueShortIdGenerator_service_1.UniqueShortIdGeneratorService();
-                                        shortUrl = urlShortener.generateUniqueId({ length: 9 });
+                                        shortUrl = urlShortener.generateUniqueId();
                                         urlData_1 = {
                                             url: url_2,
                                             shortUrl: shortUrl,
                                             clicks: 0,
-                                            userid: req.body.userid
+                                            userid: req.body.userid,
+                                            date: new Date()
                                         };
                                         return [4 /*yield*/, db.collection('url').insertOne(urlData_1)];
                                     case 4:
@@ -272,7 +273,7 @@ app.post('/login', function (req, res) { return __awaiter(void 0, void 0, void 0
                 return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
             case 3:
                 user = _a.sent();
-                if (!user) return [3 /*break*/, 5];
+                if (!user.isActive) return [3 /*break*/, 5];
                 return [4 /*yield*/, bcrypt_1.default.compare(req.body.password, user.password)];
             case 4:
                 isUserAuthenticated = _a.sent();
@@ -294,7 +295,7 @@ app.post('/login', function (req, res) { return __awaiter(void 0, void 0, void 0
                 return [3 /*break*/, 6];
             case 5:
                 res.status(400).json({
-                    message: 'Entered Email does not exists',
+                    message: 'Entered Email does not exists or is not activated',
                 });
                 _a.label = 6;
             case 6: return [3 /*break*/, 9];
@@ -313,7 +314,7 @@ app.post('/login', function (req, res) { return __awaiter(void 0, void 0, void 0
     });
 }); });
 app.post('/sign-up', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, salt, hash, user, data, token, err_4;
+    var connection, db, salt, hash, user, data, mailBody, mailSubject, err_4;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
@@ -321,7 +322,7 @@ app.post('/sign-up', function (req, res) { return __awaiter(void 0, void 0, void
                 connection = _a.sent();
                 _a.label = 2;
             case 2:
-                _a.trys.push([2, 9, 10, 11]);
+                _a.trys.push([2, 10, 11, 12]);
                 db = connection.db(dbName);
                 return [4 /*yield*/, bcrypt_1.default.genSalt(10)];
             case 3:
@@ -338,36 +339,46 @@ app.post('/sign-up', function (req, res) { return __awaiter(void 0, void 0, void
                 res.status(400).json({
                     message: 'Email id already registered',
                 });
-                return [3 /*break*/, 8];
-            case 6: return [4 /*yield*/, db.collection('users').insertOne({ email: req.body.email, password: req.body.password })];
-            case 7:
-                data = _a.sent();
-                token = jsonwebtoken_1.default.sign({ userid: data.ops[0]._id, email: req.body.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
-                res.json({
-                    message: 'User Registered Successfully',
-                    token: token,
-                    data: {
-                        email: req.body.email
-                    }
+                return [3 /*break*/, 9];
+            case 6:
+                if (!!validator_1.default.isEmail(req.body.email)) return [3 /*break*/, 7];
+                res.status(400).json({
+                    message: 'Invalid  Email, please enter a vaid email',
                 });
-                _a.label = 8;
-            case 8: return [3 /*break*/, 11];
-            case 9:
+                return [3 /*break*/, 9];
+            case 7: return [4 /*yield*/, db.collection('users').insertOne({
+                    email: req.body.email,
+                    password: req.body.password,
+                    firstName: req.body.firstName,
+                    lastName: req.body.lastName,
+                    isActive: false,
+                })];
+            case 8:
+                data = _a.sent();
+                mailBody = "<div>\n                <h4> To activate the account please <a href=\"http://localhost:3000/activate-account/" + data.ops[0]._id + "/" + req.body.email + "\">click here</a></h4>\n            </div>";
+                mailSubject = 'Account Activation for Url shortner';
+                sendMail(mailSubject, mailBody, req.body.email);
+                res.json({
+                    message: "Mail has been sent to " + req.body.email + " for activation",
+                });
+                _a.label = 9;
+            case 9: return [3 /*break*/, 12];
+            case 10:
                 err_4 = _a.sent();
                 console.log(err_4);
                 res.status(400).json({
                     message: 'Unable to register please enter valid details',
                 });
-                return [3 /*break*/, 11];
-            case 10:
+                return [3 /*break*/, 12];
+            case 11:
                 connection.close();
                 return [7 /*endfinally*/];
-            case 11: return [2 /*return*/];
+            case 12: return [2 /*return*/];
         }
     });
 }); });
-app.post('/forget-password', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, user, token, mailBody, transporter, info, err_5;
+app.get('/activate-account/:userId/:email', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var connection, db, token, updateInfo, err_5;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
@@ -375,12 +386,42 @@ app.post('/forget-password', function (req, res) { return __awaiter(void 0, void
                 connection = _a.sent();
                 _a.label = 2;
             case 2:
-                _a.trys.push([2, 9, 10, 11]);
+                _a.trys.push([2, 4, 5, 6]);
+                db = connection.db(dbName);
+                token = jsonwebtoken_1.default.sign({ userid: req.params.userId, email: req.params.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
+                return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(req.params.userId) }, { $set: { isActive: true } })];
+            case 3:
+                updateInfo = _a.sent();
+                if (updateInfo.modifiedCount > 0) {
+                    res.redirect(origin + "/index.html?token=" + token);
+                }
+                return [3 /*break*/, 6];
+            case 4:
+                err_5 = _a.sent();
+                console.log(err_5);
+                return [3 /*break*/, 6];
+            case 5:
+                connection.close();
+                return [7 /*endfinally*/];
+            case 6: return [2 /*return*/];
+        }
+    });
+}); });
+app.post('/forget-password', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var connection, db, user, token, mailBody, err_6;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+            case 1:
+                connection = _a.sent();
+                _a.label = 2;
+            case 2:
+                _a.trys.push([2, 8, 9, 10]);
                 db = connection.db(dbName);
                 return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
             case 3:
                 user = _a.sent();
-                if (!user) return [3 /*break*/, 7];
+                if (!user) return [3 /*break*/, 6];
                 return [4 /*yield*/, crypto_1.default.randomBytes(32).toString('hex')];
             case 4:
                 token = _a.sent();
@@ -388,46 +429,58 @@ app.post('/forget-password', function (req, res) { return __awaiter(void 0, void
             case 5:
                 _a.sent();
                 mailBody = "<div>\n                <h3>Reset Password</h3>\n                <p>Please click the given link to reset your password <a target=\"_blank\" href=\"" + origin + "/reset-password.html?key=" + encodeURIComponent(token) + "\"> click here </a></p>\n            </div>";
-                transporter = nodemailer_1.default.createTransport({
-                    host: "smtp.gmail.com",
-                    port: 587,
-                    secure: false,
-                    auth: {
-                        user: 'pawarharsh21@gmail.com',
-                        pass: 'czpywvbthzaiemrn',
-                    },
-                });
-                return [4 /*yield*/, transporter.sendMail({
-                        from: 'noreply@urlShortner.com',
-                        to: req.body.email,
-                        subject: "Reset password",
-                        html: mailBody,
-                    })];
-            case 6:
-                info = _a.sent();
+                sendMail("Reset password", mailBody, user.email);
                 res.json({
                     message: "Mail has been sent to " + user.email + "</h4> with further instructions",
                 });
-                return [3 /*break*/, 8];
-            case 7:
+                return [3 /*break*/, 7];
+            case 6:
                 res.status(400).json({
                     message: 'User not found',
                 });
-                _a.label = 8;
-            case 8: return [3 /*break*/, 11];
+                _a.label = 7;
+            case 7: return [3 /*break*/, 10];
+            case 8:
+                err_6 = _a.sent();
+                console.log(err_6);
+                return [3 /*break*/, 10];
             case 9:
-                err_5 = _a.sent();
-                console.log(err_5);
-                return [3 /*break*/, 11];
-            case 10:
                 connection.close();
                 return [7 /*endfinally*/];
-            case 11: return [2 /*return*/];
+            case 10: return [2 /*return*/];
         }
     });
 }); });
+function sendMail(mailSubject, mailBody, mailTo) {
+    return __awaiter(this, void 0, void 0, function () {
+        var transporter, info;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    transporter = nodemailer_1.default.createTransport({
+                        host: "smtp.gmail.com",
+                        port: 587,
+                        secure: false,
+                        auth: {
+                            user: 'pawarharsh21@gmail.com',
+                            pass: 'czpywvbthzaiemrn',
+                        },
+                    });
+                    return [4 /*yield*/, transporter.sendMail({
+                            from: 'noreply@urlShortner.com',
+                            to: mailTo,
+                            subject: mailSubject,
+                            html: mailBody,
+                        })];
+                case 1:
+                    info = _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
 app.put('/reset', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, user, salt, password, updateInfo, transporter, token, err_6;
+    var connection, db, user, salt, password, updateInfo, token, err_7;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -437,13 +490,13 @@ app.put('/reset', function (req, res) { return __awaiter(void 0, void 0, void 0,
                 connection = _a.sent();
                 _a.label = 2;
             case 2:
-                _a.trys.push([2, 13, 14, 15]);
+                _a.trys.push([2, 11, 12, 13]);
                 db = connection.db(dbName);
                 return [4 /*yield*/, db.collection('users').find({ resetToken: decodeURI(req.body.token), resetTokenExpires: { $gt: Date.now() } }).toArray()];
             case 3:
                 user = _a.sent();
                 console.log(user);
-                if (!(user.length !== 0)) return [3 /*break*/, 11];
+                if (!(user.length !== 0)) return [3 /*break*/, 9];
                 return [4 /*yield*/, bcrypt_1.default.genSalt(10)];
             case 4:
                 salt = _a.sent();
@@ -453,31 +506,11 @@ app.put('/reset', function (req, res) { return __awaiter(void 0, void 0, void 0,
                 return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user[0]._id) }, { $set: { password: password } })];
             case 6:
                 updateInfo = _a.sent();
-                if (!(updateInfo.modifiedCount > 0)) return [3 /*break*/, 10];
+                if (!(updateInfo.modifiedCount > 0)) return [3 /*break*/, 8];
                 return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user[0]._id) }, { $set: { resetToken: '', resetTokenExpires: '' } })];
             case 7:
                 _a.sent();
-                return [4 /*yield*/, nodemailer_1.default.createTransport({
-                        host: "smtp.gmail.com",
-                        port: 587,
-                        secure: false,
-                        auth: {
-                            user: 'pawarharsh21@gmail.com',
-                            pass: 'czpywvbthzaiemrn',
-                        },
-                    })];
-            case 8:
-                transporter = _a.sent();
-                // send mail with defined transport object
-                return [4 /*yield*/, transporter.sendMail({
-                        from: 'noreply@urlShortner.com',
-                        to: user[0].email,
-                        subject: "success reset",
-                        html: 'Password Reset Successfully',
-                    })];
-            case 9:
-                // send mail with defined transport object
-                _a.sent();
+                sendMail("success reset", 'Password Reset Successfully', user[0].email);
                 token = jsonwebtoken_1.default.sign({ userid: user[0]._id, email: user[0].email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
                 res.json({
                     message: "Password reset successfull check your mail for confirmation",
@@ -486,36 +519,60 @@ app.put('/reset', function (req, res) { return __awaiter(void 0, void 0, void 0,
                         email: user[0].email
                     }
                 });
-                _a.label = 10;
-            case 10: return [3 /*break*/, 12];
-            case 11:
+                _a.label = 8;
+            case 8: return [3 /*break*/, 10];
+            case 9:
                 res.status(400).json({
                     message: "Failed to update password token invalid",
                 });
-                _a.label = 12;
-            case 12: return [3 /*break*/, 15];
-            case 13:
-                err_6 = _a.sent();
-                console.log(err_6);
-                return [3 /*break*/, 15];
-            case 14:
+                _a.label = 10;
+            case 10: return [3 /*break*/, 13];
+            case 11:
+                err_7 = _a.sent();
+                console.log(err_7);
+                return [3 /*break*/, 13];
+            case 12:
                 connection.close();
                 return [7 /*endfinally*/];
-            case 15: return [2 /*return*/];
+            case 13: return [2 /*return*/];
         }
     });
 }); });
 app.get('/ping', authenticate, function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var connnection, db, user, err_8;
     return __generator(this, function (_a) {
-        res.json({
-            message: "user is logged in",
-            data: {
-                email: req.body.email,
-                isUserLoggedIn: true,
-            }
-        });
-        return [2 /*return*/];
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+            case 1:
+                connnection = _a.sent();
+                _a.label = 2;
+            case 2:
+                _a.trys.push([2, 4, , 5]);
+                db = connnection.db(dbName);
+                return [4 /*yield*/, db.collection('users').findOne({ _id: mongodb_1.ObjectId(req.body.userid) })];
+            case 3:
+                user = _a.sent();
+                if (user) {
+                    res.json({
+                        message: "user is logged in",
+                        data: {
+                            email: req.body.email,
+                        }
+                    });
+                }
+                else {
+                    res.status(400).json({
+                        message: "User Does not exists",
+                    });
+                }
+                return [3 /*break*/, 5];
+            case 4:
+                err_8 = _a.sent();
+                console.log(err_8);
+                return [3 /*break*/, 5];
+            case 5: return [2 /*return*/];
+        }
     });
 }); });
 //listen on port
-app.listen(process.env.PORT || 3000);
+app.listen(3000);
