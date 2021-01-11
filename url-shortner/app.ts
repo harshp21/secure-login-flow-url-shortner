@@ -10,6 +10,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import jwt from "jsonwebtoken";
 import dotenv from 'dotenv';
+import validator from 'validator';
 
 // mongo db config
 const app: Application = express();
@@ -20,7 +21,7 @@ const dbName: string = 'short_url';
 //env
 dotenv.config();
 
-let origin = 'https://relaxed-jepsen-29166d.netlify.app';
+let origin = 'http://127.0.0.1:5500';
 
 //middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -31,7 +32,6 @@ app.use(cors({
 
 
 function authenticate(req, res, next) {
-    // console.log(req.headers)
     if (req.headers.authorization) {
 
         jwt.verify(req.headers.authorization, process.env.JWT_TOKEN, function (err, data) {
@@ -90,12 +90,13 @@ app.post('/shorten-url', authenticate, async (req: Request, res: Response) => {
                         });
                     } else {
                         let urlShortener: UniqueShortIdGeneratorService = new UniqueShortIdGeneratorService();
-                        let shortUrl: string = urlShortener.generateUniqueId({ length: 9 });
+                        let shortUrl: string = urlShortener.generateUniqueId();
                         let urlData = {
                             url,
                             shortUrl,
                             clicks: 0,
-                            userid: req.body.userid
+                            userid: req.body.userid,
+                            date: new Date()
                         };
                         await db.collection('url').insertOne(urlData);
                         res.json({
@@ -187,7 +188,7 @@ app.post('/login', async (req, res) => {
     try {
         let db = connection.db(dbName);
         let user = await db.collection('users').findOne({ email: req.body.email });
-        if (user) {
+        if (user.isActive) {
             let isUserAuthenticated = await bycrypt.compare(req.body.password, user.password);
             if (isUserAuthenticated) {
                 let token = jwt.sign({ userid: user._id, email: user.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
@@ -205,7 +206,7 @@ app.post('/login', async (req, res) => {
             }
         } else {
             res.status(400).json({
-                message: 'Entered Email does not exists',
+                message: 'Entered Email does not exists or is not activated',
             })
         }
     } catch (err) {
@@ -231,15 +232,28 @@ app.post('/sign-up', async (req, res) => {
             res.status(400).json({
                 message: 'Email id already registered',
             })
+        } else if (!validator.isEmail(req.body.email)) {
+            res.status(400).json({
+                message: 'Invalid  Email, please enter a vaid email',
+            })
         } else {
-            let data = await db.collection('users').insertOne({ email: req.body.email, password: req.body.password });
-            let token = jwt.sign({ userid: data.ops[0]._id, email: req.body.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
+            let data = await db.collection('users').insertOne(
+                {
+                    email: req.body.email,
+                    password: req.body.password,
+                    firstName: req.body.firstName,
+                    lastName: req.body.lastName,
+                    isActive: false,
+                });
+
+            let mailBody = `<div>
+                <h4> To activate the account please <a href="http://localhost:3000/activate-account/${data.ops[0]._id}/${req.body.email}">click here</a></h4>
+            </div>`
+
+            let mailSubject = 'Account Activation for Url shortner';
+            sendMail(mailSubject, mailBody, req.body.email);
             res.json({
-                message: 'User Registered Successfully',
-                token,
-                data: {
-                    email: req.body.email
-                }
+                message: `Mail has been sent to ${req.body.email} for activation`,
             })
         }
 
@@ -253,6 +267,21 @@ app.post('/sign-up', async (req, res) => {
     }
 })
 
+app.get('/activate-account/:userId/:email', async (req, res) => {
+    let connection = await MongoClient.connect(url, { useUnifiedTopology: true });
+    try {
+        let db = connection.db(dbName);
+        let token = jwt.sign({ userid: req.params.userId, email: req.params.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
+        let updateInfo = await db.collection('users').updateOne({ _id: ObjectId(req.params.userId) }, { $set: { isActive: true } });
+        if (updateInfo.modifiedCount > 0) {
+            res.redirect(`${origin}/index.html?token=${token}`);
+        }
+    } catch (err) {
+        console.log(err);
+    } finally {
+        connection.close();
+    }
+})
 
 app.post('/forget-password', async (req, res) => {
     let connection = await MongoClient.connect(url, { useUnifiedTopology: true });
@@ -269,24 +298,7 @@ app.post('/forget-password', async (req, res) => {
                 <p>Please click the given link to reset your password <a target="_blank" href="${origin}/reset-password.html?key=${encodeURIComponent(token)}"> click here </a></p>
             </div>`
 
-            // create reusable transporter object using the default SMTP transport
-            let transporter = nodemailer.createTransport({
-                host: "smtp.gmail.com",
-                port: 587,
-                secure: false,
-                auth: {
-                    user: 'pawarharsh21@gmail.com',
-                    pass: 'czpywvbthzaiemrn',
-                },
-            });
-
-            // send mail with defined transport object
-            let info = await transporter.sendMail({
-                from: 'noreply@urlShortner.com',
-                to: req.body.email,
-                subject: "Reset password",
-                html: mailBody,
-            });
+            sendMail("Reset password", mailBody, user.email);
 
             res.json({
                 message: `Mail has been sent to ${user.email}</h4> with further instructions`,
@@ -304,6 +316,29 @@ app.post('/forget-password', async (req, res) => {
     }
 })
 
+
+async function sendMail(mailSubject, mailBody, mailTo) {
+
+    // create reusable transporter object using the default SMTP transport
+    let transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+            user: 'pawarharsh21@gmail.com',
+            pass: 'czpywvbthzaiemrn',
+        },
+    });
+
+    // send mail with defined transport object
+    let info = await transporter.sendMail({
+        from: 'noreply@urlShortner.com',
+        to: mailTo,
+        subject: mailSubject,
+        html: mailBody,
+    });
+}
+
 app.put('/reset', async (req, res) => {
     console.log('reset', decodeURIComponent(req.body.token));
     let connection = await MongoClient.connect(url, { useUnifiedTopology: true });
@@ -319,23 +354,8 @@ app.put('/reset', async (req, res) => {
 
             if (updateInfo.modifiedCount > 0) {
                 await db.collection('users').updateOne({ _id: ObjectId(user[0]._id) }, { $set: { resetToken: '', resetTokenExpires: '' } });
-                let transporter = await nodemailer.createTransport({
-                    host: "smtp.gmail.com",
-                    port: 587,
-                    secure: false,
-                    auth: {
-                        user: 'pawarharsh21@gmail.com',
-                        pass: 'czpywvbthzaiemrn',
-                    },
-                });
 
-                // send mail with defined transport object
-                await transporter.sendMail({
-                    from: 'noreply@urlShortner.com',
-                    to: user[0].email,
-                    subject: "success reset",
-                    html: 'Password Reset Successfully',
-                });
+                sendMail("success reset", 'Password Reset Successfully', user[0].email);
 
                 let token = jwt.sign({ userid: user[0]._id, email: user[0].email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
                 res.json({
@@ -360,14 +380,26 @@ app.put('/reset', async (req, res) => {
 })
 
 app.get('/ping', authenticate, async (req, res) => {
-    res.json({
-        message: "user is logged in",
-        data: {
-            email: req.body.email,
-            isUserLoggedIn: true,
+    let connnection = await MongoClient.connect(url, { useUnifiedTopology: true });
+    try {
+        let db = connnection.db(dbName);
+        let user = await db.collection('users').findOne({ _id: ObjectId(req.body.userid) });
+        if (user) {
+            res.json({
+                message: "user is logged in",
+                data: {
+                    email: req.body.email,
+                }
+            })
+        } else {
+            res.status(400).json({
+                message: "User Does not exists",
+            })
         }
-    })
+    } catch (err) {
+        console.log(err);
+    }
 })
 
 //listen on port
-app.listen(process.env.PORT || 3000);
+app.listen(3000);
