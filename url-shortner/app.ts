@@ -247,7 +247,7 @@ app.post('/sign-up', async (req, res) => {
                 });
 
             let mailBody = `<div>
-                <h4> To activate the account please <a href="http://localhost:3000/activate-account/${data.ops[0]._id}/${req.body.email}">click here</a></h4>
+                <h4> To activate the account please <a href="https://secure-login-url-shortner.herokuapp.com/activate-account/${data.ops[0]._id}/${req.body.email}">click here</a></h4>
             </div>`
 
             let mailSubject = 'Account Activation for Url shortner';
