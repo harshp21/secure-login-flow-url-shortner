@@ -21,7 +21,7 @@ const dbName: string = 'short_url';
 //env
 dotenv.config();
 
-let origin = 'https://gallant-hypatia-caf2b6.netlify.app';
+let origin = 'https://optimistic-khorana-97b48b.netlify.app';
 
 //middleware
 app.use(bodyParser.urlencoded({ extended: true }));
