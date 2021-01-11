@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function () { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function () { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -94,363 +94,379 @@ function authenticate(req, res, next) {
     }
 }
 //validate the url, after validation shortern the url and send it to the user and save in the db
-app.post('/shorten-url', authenticate, function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, url_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                console.log(req.body);
-                return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connection = _a.sent();
-                try {
-                    // check if it is in valid url format
-                    if (valid_url_1.default.isUri(req.body.url)) {
-                        url_1 = new URL(req.body.url);
-                        //check if domain name exists
-                        dns_1.default.lookup(url_1.hostname, { all: true }, function (error, results) { return __awaiter(void 0, void 0, void 0, function () {
-                            var url_2, db, urlData, urlShortener, shortUrl, urlData_1;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        if (!error) return [3 /*break*/, 1];
-                                        res.status(400).json({
-                                            message: 'Domain Does not exists',
-                                        });
-                                        return [3 /*break*/, 7];
-                                    case 1:
-                                        url_2 = req.body.url;
-                                        db = connection.db(dbName);
-                                        return [4 /*yield*/, db.collection('url').findOne({
-                                                $and: [{ url: url_2 }, { userid: req.body.userid }]
-                                            })];
-                                    case 2:
-                                        urlData = _a.sent();
-                                        if (!urlData) return [3 /*break*/, 3];
-                                        res.json({
-                                            message: 'Shortern Url Already Exists',
-                                            data: urlData
-                                        });
-                                        return [3 /*break*/, 5];
-                                    case 3:
-                                        urlShortener = new UniqueShortIdGenerator_service_1.UniqueShortIdGeneratorService();
-                                        shortUrl = urlShortener.generateUniqueId();
-                                        urlData_1 = {
-                                            url: url_2,
-                                            shortUrl: shortUrl,
-                                            clicks: 0,
-                                            userid: req.body.userid,
-                                            date: new Date()
-                                        };
-                                        return [4 /*yield*/, db.collection('url').insertOne(urlData_1)];
-                                    case 4:
-                                        _a.sent();
-                                        res.json({
-                                            message: "Short url generated Successfully",
-                                            data: urlData_1,
-                                        });
-                                        _a.label = 5;
-                                    case 5: return [4 /*yield*/, connection.close()];
-                                    case 6:
-                                        _a.sent();
-                                        _a.label = 7;
-                                    case 7: return [2 /*return*/];
-                                }
+app.post('/shorten-url', authenticate, function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connection, url_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    console.log(req.body);
+                    return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connection = _a.sent();
+                    try {
+                        // check if it is in valid url format
+                        if (valid_url_1.default.isUri(req.body.url)) {
+                            url_1 = new URL(req.body.url);
+                            //check if domain name exists
+                            dns_1.default.lookup(url_1.hostname, { all: true }, function (error, results) {
+                                return __awaiter(void 0, void 0, void 0, function () {
+                                    var url_2, db, urlData, urlShortener, shortUrl, urlData_1;
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0:
+                                                if (!error) return [3 /*break*/, 1];
+                                                res.status(400).json({
+                                                    message: 'Domain Does not exists',
+                                                });
+                                                return [3 /*break*/, 7];
+                                            case 1:
+                                                url_2 = req.body.url;
+                                                db = connection.db(dbName);
+                                                return [4 /*yield*/, db.collection('url').findOne({
+                                                    $and: [{ url: url_2 }, { userid: req.body.userid }]
+                                                })];
+                                            case 2:
+                                                urlData = _a.sent();
+                                                if (!urlData) return [3 /*break*/, 3];
+                                                res.json({
+                                                    message: 'Shortern Url Already Exists',
+                                                    data: urlData
+                                                });
+                                                return [3 /*break*/, 5];
+                                            case 3:
+                                                urlShortener = new UniqueShortIdGenerator_service_1.UniqueShortIdGeneratorService();
+                                                shortUrl = urlShortener.generateUniqueId();
+                                                urlData_1 = {
+                                                    url: url_2,
+                                                    shortUrl: shortUrl,
+                                                    clicks: 0,
+                                                    userid: req.body.userid,
+                                                    date: new Date()
+                                                };
+                                                return [4 /*yield*/, db.collection('url').insertOne(urlData_1)];
+                                            case 4:
+                                                _a.sent();
+                                                res.json({
+                                                    message: "Short url generated Successfully",
+                                                    data: urlData_1,
+                                                });
+                                                _a.label = 5;
+                                            case 5: return [4 /*yield*/, connection.close()];
+                                            case 6:
+                                                _a.sent();
+                                                _a.label = 7;
+                                            case 7: return [2 /*return*/];
+                                        }
+                                    });
+                                });
                             });
-                        }); });
+                        }
+                        else {
+                            res.status(400).json({
+                                message: 'Please enter a valid Url'
+                            });
+                        }
+                    }
+                    catch (err) {
+                        console.log(err);
+                        res.status(401).json({
+                            message: 'Some Error Occured',
+                            data: err
+                        });
+                    }
+                    return [2 /*return*/];
+            }
+        });
+    });
+});
+// redirect url if the short url has valid url mapping
+app.get('/redirect-url/:shortUrl', function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connection, db, urlData, err_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connection = _a.sent();
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 7, 8, 9]);
+                    db = connection.db(dbName);
+                    return [4 /*yield*/, db.collection('url').findOne({
+                        shortUrl: req.params.shortUrl
+                    })];
+                case 3:
+                    urlData = _a.sent();
+                    console.log('urlData', urlData);
+                    if (!urlData) return [3 /*break*/, 5];
+                    //update click count in db 
+                    return [4 /*yield*/, db.collection('url').updateOne({ _id: urlData._id }, { $set: { clicks: ++urlData.clicks } })];
+                case 4:
+                    //update click count in db 
+                    _a.sent();
+                    res.json({
+                        message: "SuccessFully fetched Redirect Data",
+                        data: urlData,
+                    });
+                    return [3 /*break*/, 6];
+                case 5:
+                    res.status(400).json({
+                        message: 'Invalid short url'
+                    });
+                    _a.label = 6;
+                case 6: return [3 /*break*/, 9];
+                case 7:
+                    err_1 = _a.sent();
+                    res.status(401).json({
+                        message: 'Some Error Occured',
+                        data: err_1
+                    });
+                    return [3 /*break*/, 9];
+                case 8:
+                    connection.close();
+                    return [7 /*endfinally*/];
+                case 9: return [2 /*return*/];
+            }
+        });
+    });
+});
+// get all url details for the user
+app.get('/url-data', authenticate, function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connection, db, urlData, err_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connection = _a.sent();
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 4, 5, 6]);
+                    db = connection.db(dbName);
+                    return [4 /*yield*/, db.collection('url').find({ userid: req.body.userid }).toArray()];
+                case 3:
+                    urlData = _a.sent();
+                    res.json({
+                        message: 'Url details fetched successfully',
+                        data: urlData
+                    });
+                    return [3 /*break*/, 6];
+                case 4:
+                    err_2 = _a.sent();
+                    res.status(401).json({
+                        message: 'Some Error Occured',
+                        data: err_2
+                    });
+                    return [3 /*break*/, 6];
+                case 5:
+                    connection.close();
+                    return [7 /*endfinally*/];
+                case 6: return [2 /*return*/];
+            }
+        });
+    });
+});
+app.post('/login', function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connection, db, user, isUserAuthenticated, token, err_3;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connection = _a.sent();
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 7, 8, 9]);
+                    db = connection.db(dbName);
+                    return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
+                case 3:
+                    user = _a.sent();
+                    if (!user.isActive) return [3 /*break*/, 5];
+                    return [4 /*yield*/, bcrypt_1.default.compare(req.body.password, user.password)];
+                case 4:
+                    isUserAuthenticated = _a.sent();
+                    if (isUserAuthenticated) {
+                        token = jsonwebtoken_1.default.sign({ userid: user._id, email: user.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
+                        res.json({
+                            message: 'User Authenticated Successfully',
+                            token: token,
+                            data: {
+                                email: user.email
+                            }
+                        });
                     }
                     else {
                         res.status(400).json({
-                            message: 'Please enter a valid Url'
+                            message: 'Password is wrong for the provided email',
                         });
                     }
-                }
-                catch (err) {
-                    console.log(err);
-                    res.status(401).json({
-                        message: 'Some Error Occured',
-                        data: err
-                    });
-                }
-                return [2 /*return*/];
-        }
-    });
-}); });
-// redirect url if the short url has valid url mapping
-app.get('/redirect-url/:shortUrl', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, urlData, err_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connection = _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 7, 8, 9]);
-                db = connection.db(dbName);
-                return [4 /*yield*/, db.collection('url').findOne({
-                        shortUrl: req.params.shortUrl
-                    })];
-            case 3:
-                urlData = _a.sent();
-                console.log('urlData', urlData);
-                if (!urlData) return [3 /*break*/, 5];
-                //update click count in db 
-                return [4 /*yield*/, db.collection('url').updateOne({ _id: urlData._id }, { $set: { clicks: ++urlData.clicks } })];
-            case 4:
-                //update click count in db 
-                _a.sent();
-                res.json({
-                    message: "SuccessFully fetched Redirect Data",
-                    data: urlData,
-                });
-                return [3 /*break*/, 6];
-            case 5:
-                res.status(400).json({
-                    message: 'Invalid short url'
-                });
-                _a.label = 6;
-            case 6: return [3 /*break*/, 9];
-            case 7:
-                err_1 = _a.sent();
-                res.status(401).json({
-                    message: 'Some Error Occured',
-                    data: err_1
-                });
-                return [3 /*break*/, 9];
-            case 8:
-                connection.close();
-                return [7 /*endfinally*/];
-            case 9: return [2 /*return*/];
-        }
-    });
-}); });
-// get all url details for the user
-app.get('/url-data', authenticate, function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, urlData, err_2;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connection = _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 4, 5, 6]);
-                db = connection.db(dbName);
-                return [4 /*yield*/, db.collection('url').find({ userid: req.body.userid }).toArray()];
-            case 3:
-                urlData = _a.sent();
-                res.json({
-                    message: 'Url details fetched successfully',
-                    data: urlData
-                });
-                return [3 /*break*/, 6];
-            case 4:
-                err_2 = _a.sent();
-                res.status(401).json({
-                    message: 'Some Error Occured',
-                    data: err_2
-                });
-                return [3 /*break*/, 6];
-            case 5:
-                connection.close();
-                return [7 /*endfinally*/];
-            case 6: return [2 /*return*/];
-        }
-    });
-}); });
-app.post('/login', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, user, isUserAuthenticated, token, err_3;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connection = _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 7, 8, 9]);
-                db = connection.db(dbName);
-                return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
-            case 3:
-                user = _a.sent();
-                if (!user.isActive) return [3 /*break*/, 5];
-                return [4 /*yield*/, bcrypt_1.default.compare(req.body.password, user.password)];
-            case 4:
-                isUserAuthenticated = _a.sent();
-                if (isUserAuthenticated) {
-                    token = jsonwebtoken_1.default.sign({ userid: user._id, email: user.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
-                    res.json({
-                        message: 'User Authenticated Successfully',
-                        token: token,
-                        data: {
-                            email: user.email
-                        }
-                    });
-                }
-                else {
+                    return [3 /*break*/, 6];
+                case 5:
                     res.status(400).json({
-                        message: 'Password is wrong for the provided email',
+                        message: 'Entered Email does not exists or is not activated',
                     });
-                }
-                return [3 /*break*/, 6];
-            case 5:
-                res.status(400).json({
-                    message: 'Entered Email does not exists or is not activated',
-                });
-                _a.label = 6;
-            case 6: return [3 /*break*/, 9];
-            case 7:
-                err_3 = _a.sent();
-                console.log(err_3);
-                res.status(400).json({
-                    message: 'Unable to login please enter valid credentials',
-                });
-                return [3 /*break*/, 9];
-            case 8:
-                connection.close();
-                return [7 /*endfinally*/];
-            case 9: return [2 /*return*/];
-        }
+                    _a.label = 6;
+                case 6: return [3 /*break*/, 9];
+                case 7:
+                    err_3 = _a.sent();
+                    console.log(err_3);
+                    res.status(400).json({
+                        message: 'Unable to login please enter valid credentials',
+                    });
+                    return [3 /*break*/, 9];
+                case 8:
+                    connection.close();
+                    return [7 /*endfinally*/];
+                case 9: return [2 /*return*/];
+            }
+        });
     });
-}); });
-app.post('/sign-up', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, salt, hash, user, data, mailBody, mailSubject, err_4;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connection = _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 10, 11, 12]);
-                db = connection.db(dbName);
-                return [4 /*yield*/, bcrypt_1.default.genSalt(10)];
-            case 3:
-                salt = _a.sent();
-                return [4 /*yield*/, bcrypt_1.default.hash(req.body.password, salt)];
-            case 4:
-                hash = _a.sent();
-                req.body.password = hash;
-                return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
-            case 5:
-                user = _a.sent();
-                console.log(user);
-                if (!user) return [3 /*break*/, 6];
-                res.status(400).json({
-                    message: 'Email id already registered',
-                });
-                return [3 /*break*/, 9];
-            case 6:
-                if (!!validator_1.default.isEmail(req.body.email)) return [3 /*break*/, 7];
-                res.status(400).json({
-                    message: 'Invalid  Email, please enter a vaid email',
-                });
-                return [3 /*break*/, 9];
-            case 7: return [4 /*yield*/, db.collection('users').insertOne({
+});
+app.post('/sign-up', function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connection, db, salt, hash, user, data, mailBody, mailSubject, err_4;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connection = _a.sent();
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 10, 11, 12]);
+                    db = connection.db(dbName);
+                    return [4 /*yield*/, bcrypt_1.default.genSalt(10)];
+                case 3:
+                    salt = _a.sent();
+                    return [4 /*yield*/, bcrypt_1.default.hash(req.body.password, salt)];
+                case 4:
+                    hash = _a.sent();
+                    req.body.password = hash;
+                    return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
+                case 5:
+                    user = _a.sent();
+                    console.log(user);
+                    if (!user) return [3 /*break*/, 6];
+                    res.status(400).json({
+                        message: 'Email id already registered',
+                    });
+                    return [3 /*break*/, 9];
+                case 6:
+                    if (!!validator_1.default.isEmail(req.body.email)) return [3 /*break*/, 7];
+                    res.status(400).json({
+                        message: 'Invalid  Email, please enter a vaid email',
+                    });
+                    return [3 /*break*/, 9];
+                case 7: return [4 /*yield*/, db.collection('users').insertOne({
                     email: req.body.email,
                     password: req.body.password,
                     firstName: req.body.firstName,
                     lastName: req.body.lastName,
                     isActive: false,
                 })];
-            case 8:
-                data = _a.sent();
-                mailBody = "<div>\n                <h4> To activate the account please <a href=\"http://localhost:3000/activate-account/" + data.ops[0]._id + "/" + req.body.email + "\">click here</a></h4>\n            </div>";
-                mailSubject = 'Account Activation for Url shortner';
-                sendMail(mailSubject, mailBody, req.body.email);
-                res.json({
-                    message: "Mail has been sent to " + req.body.email + " for activation",
-                });
-                _a.label = 9;
-            case 9: return [3 /*break*/, 12];
-            case 10:
-                err_4 = _a.sent();
-                console.log(err_4);
-                res.status(400).json({
-                    message: 'Unable to register please enter valid details',
-                });
-                return [3 /*break*/, 12];
-            case 11:
-                connection.close();
-                return [7 /*endfinally*/];
-            case 12: return [2 /*return*/];
-        }
+                case 8:
+                    data = _a.sent();
+                    mailBody = "<div>\n                <h4> To activate the account please <a href=\"https://secure-login-url-shortner.herokuapp.com/activate-account/" + data.ops[0]._id + "/" + req.body.email + "\">click here</a></h4>\n            </div>";
+                    mailSubject = 'Account Activation for Url shortner';
+                    sendMail(mailSubject, mailBody, req.body.email);
+                    res.json({
+                        message: "Mail has been sent to " + req.body.email + " for activation",
+                    });
+                    _a.label = 9;
+                case 9: return [3 /*break*/, 12];
+                case 10:
+                    err_4 = _a.sent();
+                    console.log(err_4);
+                    res.status(400).json({
+                        message: 'Unable to register please enter valid details',
+                    });
+                    return [3 /*break*/, 12];
+                case 11:
+                    connection.close();
+                    return [7 /*endfinally*/];
+                case 12: return [2 /*return*/];
+            }
+        });
     });
-}); });
-app.get('/activate-account/:userId/:email', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, token, updateInfo, err_5;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connection = _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 4, 5, 6]);
-                db = connection.db(dbName);
-                token = jsonwebtoken_1.default.sign({ userid: req.params.userId, email: req.params.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
-                return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(req.params.userId) }, { $set: { isActive: true } })];
-            case 3:
-                updateInfo = _a.sent();
-                if (updateInfo.modifiedCount > 0) {
-                    res.redirect(origin + "/index.html?token=" + token);
-                }
-                return [3 /*break*/, 6];
-            case 4:
-                err_5 = _a.sent();
-                console.log(err_5);
-                return [3 /*break*/, 6];
-            case 5:
-                connection.close();
-                return [7 /*endfinally*/];
-            case 6: return [2 /*return*/];
-        }
+});
+app.get('/activate-account/:userId/:email', function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connection, db, token, updateInfo, err_5;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connection = _a.sent();
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 4, 5, 6]);
+                    db = connection.db(dbName);
+                    token = jsonwebtoken_1.default.sign({ userid: req.params.userId, email: req.params.email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
+                    return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(req.params.userId) }, { $set: { isActive: true } })];
+                case 3:
+                    updateInfo = _a.sent();
+                    if (updateInfo.modifiedCount > 0) {
+                        res.redirect(origin + "/index.html?token=" + token);
+                    }
+                    return [3 /*break*/, 6];
+                case 4:
+                    err_5 = _a.sent();
+                    console.log(err_5);
+                    return [3 /*break*/, 6];
+                case 5:
+                    connection.close();
+                    return [7 /*endfinally*/];
+                case 6: return [2 /*return*/];
+            }
+        });
     });
-}); });
-app.post('/forget-password', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, user, token, mailBody, err_6;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connection = _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 8, 9, 10]);
-                db = connection.db(dbName);
-                return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
-            case 3:
-                user = _a.sent();
-                if (!user) return [3 /*break*/, 6];
-                return [4 /*yield*/, crypto_1.default.randomBytes(32).toString('hex')];
-            case 4:
-                token = _a.sent();
-                return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user._id) }, { $set: { resetToken: token, resetTokenExpires: Date.now() + 300000 } })];
-            case 5:
-                _a.sent();
-                mailBody = "<div>\n                <h3>Reset Password</h3>\n                <p>Please click the given link to reset your password <a target=\"_blank\" href=\"" + origin + "/reset-password.html?key=" + encodeURIComponent(token) + "\"> click here </a></p>\n            </div>";
-                sendMail("Reset password", mailBody, user.email);
-                res.json({
-                    message: "Mail has been sent to " + user.email + "</h4> with further instructions",
-                });
-                return [3 /*break*/, 7];
-            case 6:
-                res.status(400).json({
-                    message: 'User not found',
-                });
-                _a.label = 7;
-            case 7: return [3 /*break*/, 10];
-            case 8:
-                err_6 = _a.sent();
-                console.log(err_6);
-                return [3 /*break*/, 10];
-            case 9:
-                connection.close();
-                return [7 /*endfinally*/];
-            case 10: return [2 /*return*/];
-        }
+});
+app.post('/forget-password', function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connection, db, user, token, mailBody, err_6;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connection = _a.sent();
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 8, 9, 10]);
+                    db = connection.db(dbName);
+                    return [4 /*yield*/, db.collection('users').findOne({ email: req.body.email })];
+                case 3:
+                    user = _a.sent();
+                    if (!user) return [3 /*break*/, 6];
+                    return [4 /*yield*/, crypto_1.default.randomBytes(32).toString('hex')];
+                case 4:
+                    token = _a.sent();
+                    return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user._id) }, { $set: { resetToken: token, resetTokenExpires: Date.now() + 300000 } })];
+                case 5:
+                    _a.sent();
+                    mailBody = "<div>\n                <h3>Reset Password</h3>\n                <p>Please click the given link to reset your password <a target=\"_blank\" href=\"" + origin + "/reset-password.html?key=" + encodeURIComponent(token) + "\"> click here </a></p>\n            </div>";
+                    sendMail("Reset password", mailBody, user.email);
+                    res.json({
+                        message: "Mail has been sent to " + user.email + "</h4> with further instructions",
+                    });
+                    return [3 /*break*/, 7];
+                case 6:
+                    res.status(400).json({
+                        message: 'User not found',
+                    });
+                    _a.label = 7;
+                case 7: return [3 /*break*/, 10];
+                case 8:
+                    err_6 = _a.sent();
+                    console.log(err_6);
+                    return [3 /*break*/, 10];
+                case 9:
+                    connection.close();
+                    return [7 /*endfinally*/];
+                case 10: return [2 /*return*/];
+            }
+        });
     });
-}); });
+});
 function sendMail(mailSubject, mailBody, mailTo) {
     return __awaiter(this, void 0, void 0, function () {
         var transporter, info;
@@ -467,11 +483,11 @@ function sendMail(mailSubject, mailBody, mailTo) {
                         },
                     });
                     return [4 /*yield*/, transporter.sendMail({
-                            from: 'noreply@urlShortner.com',
-                            to: mailTo,
-                            subject: mailSubject,
-                            html: mailBody,
-                        })];
+                        from: 'noreply@urlShortner.com',
+                        to: mailTo,
+                        subject: mailSubject,
+                        html: mailBody,
+                    })];
                 case 1:
                     info = _a.sent();
                     return [2 /*return*/];
@@ -479,100 +495,104 @@ function sendMail(mailSubject, mailBody, mailTo) {
         });
     });
 }
-app.put('/reset', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connection, db, user, salt, password, updateInfo, token, err_7;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                console.log('reset', decodeURIComponent(req.body.token));
-                return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connection = _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 11, 12, 13]);
-                db = connection.db(dbName);
-                return [4 /*yield*/, db.collection('users').find({ resetToken: decodeURI(req.body.token), resetTokenExpires: { $gt: Date.now() } }).toArray()];
-            case 3:
-                user = _a.sent();
-                console.log(user);
-                if (!(user.length !== 0)) return [3 /*break*/, 9];
-                return [4 /*yield*/, bcrypt_1.default.genSalt(10)];
-            case 4:
-                salt = _a.sent();
-                return [4 /*yield*/, bcrypt_1.default.hash(req.body.password, salt)];
-            case 5:
-                password = _a.sent();
-                return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user[0]._id) }, { $set: { password: password } })];
-            case 6:
-                updateInfo = _a.sent();
-                if (!(updateInfo.modifiedCount > 0)) return [3 /*break*/, 8];
-                return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user[0]._id) }, { $set: { resetToken: '', resetTokenExpires: '' } })];
-            case 7:
-                _a.sent();
-                sendMail("success reset", 'Password Reset Successfully', user[0].email);
-                token = jsonwebtoken_1.default.sign({ userid: user[0]._id, email: user[0].email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
-                res.json({
-                    message: "Password reset successfull check your mail for confirmation",
-                    token: token,
-                    data: {
-                        email: user[0].email
-                    }
-                });
-                _a.label = 8;
-            case 8: return [3 /*break*/, 10];
-            case 9:
-                res.status(400).json({
-                    message: "Failed to update password token invalid",
-                });
-                _a.label = 10;
-            case 10: return [3 /*break*/, 13];
-            case 11:
-                err_7 = _a.sent();
-                console.log(err_7);
-                return [3 /*break*/, 13];
-            case 12:
-                connection.close();
-                return [7 /*endfinally*/];
-            case 13: return [2 /*return*/];
-        }
-    });
-}); });
-app.get('/ping', authenticate, function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var connnection, db, user, err_8;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
-            case 1:
-                connnection = _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 4, , 5]);
-                db = connnection.db(dbName);
-                return [4 /*yield*/, db.collection('users').findOne({ _id: mongodb_1.ObjectId(req.body.userid) })];
-            case 3:
-                user = _a.sent();
-                if (user) {
+app.put('/reset', function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connection, db, user, salt, password, updateInfo, token, err_7;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    console.log('reset', decodeURIComponent(req.body.token));
+                    return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connection = _a.sent();
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 11, 12, 13]);
+                    db = connection.db(dbName);
+                    return [4 /*yield*/, db.collection('users').find({ resetToken: decodeURI(req.body.token), resetTokenExpires: { $gt: Date.now() } }).toArray()];
+                case 3:
+                    user = _a.sent();
+                    console.log(user);
+                    if (!(user.length !== 0)) return [3 /*break*/, 9];
+                    return [4 /*yield*/, bcrypt_1.default.genSalt(10)];
+                case 4:
+                    salt = _a.sent();
+                    return [4 /*yield*/, bcrypt_1.default.hash(req.body.password, salt)];
+                case 5:
+                    password = _a.sent();
+                    return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user[0]._id) }, { $set: { password: password } })];
+                case 6:
+                    updateInfo = _a.sent();
+                    if (!(updateInfo.modifiedCount > 0)) return [3 /*break*/, 8];
+                    return [4 /*yield*/, db.collection('users').updateOne({ _id: mongodb_1.ObjectId(user[0]._id) }, { $set: { resetToken: '', resetTokenExpires: '' } })];
+                case 7:
+                    _a.sent();
+                    sendMail("success reset", 'Password Reset Successfully', user[0].email);
+                    token = jsonwebtoken_1.default.sign({ userid: user[0]._id, email: user[0].email }, process.env.JWT_TOKEN, { expiresIn: "1h" });
                     res.json({
-                        message: "user is logged in",
+                        message: "Password reset successfull check your mail for confirmation",
+                        token: token,
                         data: {
-                            email: req.body.email,
+                            email: user[0].email
                         }
                     });
-                }
-                else {
+                    _a.label = 8;
+                case 8: return [3 /*break*/, 10];
+                case 9:
                     res.status(400).json({
-                        message: "User Does not exists",
+                        message: "Failed to update password token invalid",
                     });
-                }
-                return [3 /*break*/, 5];
-            case 4:
-                err_8 = _a.sent();
-                console.log(err_8);
-                return [3 /*break*/, 5];
-            case 5: return [2 /*return*/];
-        }
+                    _a.label = 10;
+                case 10: return [3 /*break*/, 13];
+                case 11:
+                    err_7 = _a.sent();
+                    console.log(err_7);
+                    return [3 /*break*/, 13];
+                case 12:
+                    connection.close();
+                    return [7 /*endfinally*/];
+                case 13: return [2 /*return*/];
+            }
+        });
     });
-}); });
+});
+app.get('/ping', authenticate, function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var connnection, db, user, err_8;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, mongodb_1.MongoClient.connect(url, { useUnifiedTopology: true })];
+                case 1:
+                    connnection = _a.sent();
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 4, , 5]);
+                    db = connnection.db(dbName);
+                    return [4 /*yield*/, db.collection('users').findOne({ _id: mongodb_1.ObjectId(req.body.userid) })];
+                case 3:
+                    user = _a.sent();
+                    if (user) {
+                        res.json({
+                            message: "user is logged in",
+                            data: {
+                                email: req.body.email,
+                            }
+                        });
+                    }
+                    else {
+                        res.status(400).json({
+                            message: "User Does not exists",
+                        });
+                    }
+                    return [3 /*break*/, 5];
+                case 4:
+                    err_8 = _a.sent();
+                    console.log(err_8);
+                    return [3 /*break*/, 5];
+                case 5: return [2 /*return*/];
+            }
+        });
+    });
+});
 //listen on port
 app.listen(process.env.PORT || 3000);
