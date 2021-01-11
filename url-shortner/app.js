@@ -58,7 +58,7 @@ var url = 'mongodb+srv://harsh:harsh123@cluster0.vjrm0.mongodb.net/<dbname>?retr
 var dbName = 'short_url';
 //env
 dotenv_1.default.config();
-var origin = 'https://gallant-hypatia-caf2b6.netlify.app';
+var origin = 'https://optimistic-khorana-97b48b.netlify.app';
 //middleware
 app.use(body_parser_1.default.urlencoded({ extended: true }));
 app.use(body_parser_1.default.json());
